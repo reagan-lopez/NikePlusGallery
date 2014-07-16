@@ -12,22 +12,25 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 
 public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
 
-    ArrayList<FlickrFeed> flickrFeedList;
+
     LayoutInflater vi;
-    int Resource;
+    int singleElem;
+    ArrayList<FlickrFeed> flickrFeedList;
+    DBHelper dbHelper;
     ViewHolder holder;
 
-    public FlickrFeedAdapter(Context context, int resource, ArrayList<FlickrFeed> objects) {
-        super(context, resource, objects);
-        vi = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        Resource = resource;
-        flickrFeedList = objects;
+    public FlickrFeedAdapter(Context context, int singleElem, ArrayList<FlickrFeed> flickrFeedList, DBHelper dbHelper) {
+        super(context, singleElem, flickrFeedList);
+        this.vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.singleElem = singleElem;
+        this.flickrFeedList = flickrFeedList;
+        this.dbHelper = dbHelper;
     }
 
     @Override
@@ -35,14 +38,14 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
         View v = convertView;
         if (v == null) {
             holder = new ViewHolder();
-            v = vi.inflate(Resource, null);
+            v = vi.inflate(singleElem, null);
             holder.media = (ImageView) v.findViewById(R.id.media);
             holder.title = (TextView) v.findViewById(R.id.title);
             v.setTag(holder);
         } else {
             holder = (ViewHolder) v.getTag();
         }
-        holder.media.setImageResource(R.drawable.ic_launcher);
+        holder.media.setImageResource(R.drawable.placeholder);
         new DownloadImageTask(holder.media).execute(flickrFeedList.get(position).getMedia());
         holder.title.setText(flickrFeedList.get(position).getTitle());
         return v;
@@ -61,16 +64,22 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
         }
 
         protected Bitmap doInBackground(String... strings) {
-            String urldisplay = strings[0];
-            Bitmap mIcon11 = null;
+            String imgURL = strings[0];
+            Bitmap bm = null;
             try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
+                InputStream in = new java.net.URL(imgURL).openStream();
+                bm = BitmapFactory.decodeStream(in);
+
+                // convert bitmap to byte array
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                bm.compress(Bitmap.CompressFormat.PNG, 100, bos);
+                byte[] bArray = bos.toByteArray();
+                dbHelper.insertMedia(bos.toByteArray()); // Insert response into SQLite
             } catch (Exception e) {
                 Log.e("Error", e.getMessage());
                 e.printStackTrace();
             }
-            return mIcon11;
+            return bm;
         }
 
         protected void onPostExecute(Bitmap result) {

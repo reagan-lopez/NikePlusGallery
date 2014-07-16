@@ -3,5 +3,8 @@
 
     <string name="app_name">Nike+ Gallery</string>
     <string name="action_settings">Settings</string>
+    <string name="KApplicationName">Carousel Demo</string>
+    <string name="KPetShop">Pet Shop</string>
+    <string name="KNewArrivals">New arrivals</string>	
 
 </resources>
