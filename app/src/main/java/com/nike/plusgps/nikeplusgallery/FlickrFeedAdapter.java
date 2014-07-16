@@ -18,7 +18,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import java.io.InputStream;
 import java.util.ArrayList;
 
@@ -32,18 +31,21 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
     ArrayList<FlickrFeed> flickrFeedList;
     DBHelper dbHelper;
     ViewHolder holder;
-    private LruCache<String, Bitmap> mMemoryCache;
+    LruCache<String, Bitmap> mMemoryCache;
+
     static class ViewHolder { // Holder class for the image and title.
         public ImageView media;
         public TextView title;
     }
 
-    public FlickrFeedAdapter(Context context, int singleElem, ArrayList<FlickrFeed> flickrFeedList, DBHelper dbHelper) {
+    public FlickrFeedAdapter(Context context, int singleElem,
+                             ArrayList<FlickrFeed> flickrFeedList, DBHelper dbHelper, LruCache<String, Bitmap> mMemoryCache) {
         super(context, singleElem, flickrFeedList);
         this.vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         this.singleElem = singleElem;
         this.flickrFeedList = flickrFeedList;
         this.dbHelper = dbHelper;
+        this.mMemoryCache = mMemoryCache;
     }
 
     @Override
@@ -80,13 +82,13 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
         protected Bitmap doInBackground(String... strings) {
             String imgURL = strings[0];
             Bitmap bm = null;
-           // bm = getBitmapFromMemCache(imgURL); // Gets bitmap from memory cache
+            bm = getBitmapFromMemCache(imgURL); // Gets bitmap from memory cache
             try {
-                //if (bm == null) { // Generates bitmap from the server
+                if (bm == null) { // Generates bitmap from the server
                     InputStream in = new java.net.URL(imgURL).openStream();
                     bm = BitmapFactory.decodeStream(in);
-               // }
-                //addBitmapToMemoryCache(imgURL, bm); // Adds bitmap to memory cache.
+                }
+                addBitmapToMemoryCache(imgURL, bm); // Adds bitmap to memory cache.
 
             } catch (Exception e) {
                 Log.e("Error", e.getMessage());
