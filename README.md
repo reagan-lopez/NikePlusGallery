@@ -7,4 +7,4 @@ The JSON response is cached in SQLite and read from it subsequently.
 The images are cached in SQLite. (This has performance issues).
 
 
-APK file: debug-apk.apk
+APK file: reagan-lopez/NikePlusGallery/app-debug.apk
