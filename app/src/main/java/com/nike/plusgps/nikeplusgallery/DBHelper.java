@@ -1,3 +1,9 @@
+/**
+    Copyright © 2014 Reagan Lopez
+    [This program is licensed under the "MIT License"]
+    Please see the file LICENSE in the source
+    distribution of this software for license terms
+*/
 package com.nike.plusgps.nikeplusgallery;
 
 import android.content.ContentValues;
@@ -6,9 +12,12 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
 import java.util.ArrayList;
 import java.util.HashMap;
+
+/**
+ * Helper class containing the methods for CRUD operations in SQLite.
+ */
 
 public class DBHelper extends SQLiteOpenHelper {
 
@@ -22,7 +31,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String MEDIA_TABLE_NAME = "media";
     public static final String MEDIA_COLUMN_ID = "id";
     public static final String MEDIA_COLUMN_IMAGE = "image";
-    //public static final String MEDIA_COLUMN_TITLE = "title";
+
 
     private HashMap hp;
 
@@ -58,12 +67,10 @@ public class DBHelper extends SQLiteOpenHelper {
         return true;
     }
 
-    //public boolean insertMedia(byte[] image, String title) {
     public boolean insertMedia(byte[] image) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(MEDIA_COLUMN_IMAGE, image);
-        //contentValues.put(MEDIA_COLUMN_TITLE, title);
         db.insert(MEDIA_TABLE_NAME, null, contentValues);
         return true;
     }
@@ -103,24 +110,6 @@ public class DBHelper extends SQLiteOpenHelper {
         int numRows = (int) DatabaseUtils.queryNumEntries(db, MEDIA_TABLE_NAME);
         return numRows;
     }
-/*
-    public boolean updateResponse (Integer id, String txt)
-    {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put("txt", txt);
-        db.update("response", contentValues, "id = ? ", new String[] { Integer.toString(id) } );
-        return true;
-    }
-
-    public Integer deleteContact (Integer id)
-    {
-        SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete("response",
-                "id = ? ",
-                new String[] { Integer.toString(id) });
-    }
-*/
 
     public ArrayList getAllResponse() {
         ArrayList array_list = new ArrayList();

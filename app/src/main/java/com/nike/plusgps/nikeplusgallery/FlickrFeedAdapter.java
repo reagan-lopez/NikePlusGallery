@@ -1,3 +1,9 @@
+/**
+     Copyright © 2014 Reagan Lopez
+     [This program is licensed under the "MIT License"]
+     Please see the file LICENSE in the source
+     distribution of this software for license terms
+*/
 package com.nike.plusgps.nikeplusgallery;
 
 import android.content.Context;
@@ -11,13 +17,14 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+/**
+ * Adapter that downloads the images and attaches the contents to the views.
+ */
 public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
-
 
     LayoutInflater vi;
     int singleElem;
@@ -36,6 +43,7 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View v = convertView;
+        // This is done to reduce the expensive findViewById operation.
         if (v == null) {
             holder = new ViewHolder();
             v = vi.inflate(singleElem, null);
@@ -51,11 +59,17 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
         return v;
     }
 
+    /**
+     * Holder class for the image and title.
+     */
     static class ViewHolder {
         public ImageView media;
         public TextView title;
     }
 
+    /**
+     * Async task to download the images.
+     */
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 
@@ -63,6 +77,7 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
             this.bmImage = bmImage;
         }
 
+        @Override
         protected Bitmap doInBackground(String... strings) {
             String imgURL = strings[0];
             Bitmap bm = null;
@@ -70,11 +85,11 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
                 InputStream in = new java.net.URL(imgURL).openStream();
                 bm = BitmapFactory.decodeStream(in);
 
-                // convert bitmap to byte array
+                // Converts bitmap to byte array
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 bm.compress(Bitmap.CompressFormat.PNG, 100, bos);
                 byte[] bArray = bos.toByteArray();
-                dbHelper.insertMedia(bos.toByteArray()); // Insert response into SQLite
+                dbHelper.insertMedia(bos.toByteArray()); // Inserts response into SQLite
             } catch (Exception e) {
                 Log.e("Error", e.getMessage());
                 e.printStackTrace();
@@ -82,6 +97,7 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
             return bm;
         }
 
+        @Override
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
         }
