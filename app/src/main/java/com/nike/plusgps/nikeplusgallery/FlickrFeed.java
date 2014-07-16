@@ -8,7 +8,7 @@
 package com.nike.plusgps.nikeplusgallery;
 
 /**
- * Container for the images and titles with its getter and setter methods.
+ * Container for the image links and title description with its getter and setter methods.
  */
 public class FlickrFeed {
 

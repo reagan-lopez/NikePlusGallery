@@ -11,13 +11,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import java.io.ByteArrayOutputStream;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 
@@ -31,6 +32,11 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
     ArrayList<FlickrFeed> flickrFeedList;
     DBHelper dbHelper;
     ViewHolder holder;
+    private LruCache<String, Bitmap> mMemoryCache;
+    static class ViewHolder { // Holder class for the image and title.
+        public ImageView media;
+        public TextView title;
+    }
 
     public FlickrFeedAdapter(Context context, int singleElem, ArrayList<FlickrFeed> flickrFeedList, DBHelper dbHelper) {
         super(context, singleElem, flickrFeedList);
@@ -42,6 +48,7 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+        //Toast.makeText(parent.getContext(), String.valueOf(position), Toast.LENGTH_LONG).show();
         View v = convertView;
         // This is done to reduce the expensive findViewById operation.
         if (v == null) {
@@ -60,14 +67,6 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
     }
 
     /**
-     * Holder class for the image and title.
-     */
-    static class ViewHolder {
-        public ImageView media;
-        public TextView title;
-    }
-
-    /**
      * Async task to download the images.
      */
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
@@ -81,15 +80,14 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
         protected Bitmap doInBackground(String... strings) {
             String imgURL = strings[0];
             Bitmap bm = null;
+           // bm = getBitmapFromMemCache(imgURL); // Gets bitmap from memory cache
             try {
-                InputStream in = new java.net.URL(imgURL).openStream();
-                bm = BitmapFactory.decodeStream(in);
+                //if (bm == null) { // Generates bitmap from the server
+                    InputStream in = new java.net.URL(imgURL).openStream();
+                    bm = BitmapFactory.decodeStream(in);
+               // }
+                //addBitmapToMemoryCache(imgURL, bm); // Adds bitmap to memory cache.
 
-                // Converts bitmap to byte array
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                bm.compress(Bitmap.CompressFormat.PNG, 100, bos);
-                byte[] bArray = bos.toByteArray();
-                dbHelper.insertMedia(bos.toByteArray()); // Inserts response into SQLite
             } catch (Exception e) {
                 Log.e("Error", e.getMessage());
                 e.printStackTrace();
@@ -102,5 +100,15 @@ public class FlickrFeedAdapter extends ArrayAdapter<FlickrFeed> {
             bmImage.setImageBitmap(result);
         }
 
+    }
+
+    public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+        if (getBitmapFromMemCache(key) == null) {
+            mMemoryCache.put(key, bitmap);
+        }
+    }
+
+    public Bitmap getBitmapFromMemCache(String key) {
+        return (Bitmap) mMemoryCache.get(key);
     }
 }

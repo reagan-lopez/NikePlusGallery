@@ -30,7 +30,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public static final String MEDIA_TABLE_NAME = "media";
     public static final String MEDIA_COLUMN_ID = "id";
-    public static final String MEDIA_COLUMN_IMAGE = "image";
+    public static final String MEDIA_COLUMN_URL = "url";
+    public static final String MEDIA_COLUMN_TITLE = "title";
 
 
     private HashMap hp;
@@ -47,8 +48,7 @@ public class DBHelper extends SQLiteOpenHelper {
         );
         db.execSQL(
                 "CREATE TABLE " + MEDIA_TABLE_NAME  +
-                        " ( " + MEDIA_COLUMN_ID + " INTEGER PRIMARY KEY, " +  MEDIA_COLUMN_IMAGE + " BLOB )"
-                        //" ( " + MEDIA_COLUMN_ID + " INTEGER PRIMARY KEY, " +  MEDIA_COLUMN_IMAGE + " BLOB, " + MEDIA_COLUMN_TITLE + " TEXT )"
+                        " ( " + MEDIA_COLUMN_ID + " INTEGER PRIMARY KEY, " + MEDIA_COLUMN_URL + " TEXT, " +  MEDIA_COLUMN_TITLE + " TEXT )"
         );
     }
 
@@ -67,10 +67,11 @@ public class DBHelper extends SQLiteOpenHelper {
         return true;
     }
 
-    public boolean insertMedia(byte[] image) {
+    public boolean insertMedia(String url, String title) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(MEDIA_COLUMN_IMAGE, image);
+        contentValues.put(MEDIA_COLUMN_URL, url);
+        contentValues.put(MEDIA_COLUMN_TITLE, title);
         db.insert(MEDIA_TABLE_NAME, null, contentValues);
         return true;
     }
@@ -129,7 +130,7 @@ public class DBHelper extends SQLiteOpenHelper {
         Cursor res =  db.rawQuery( "SELECT * FROM " + MEDIA_TABLE_NAME + "", null );
         res.moveToFirst();
         while(res.isAfterLast() == false){
-            array_list.add(res.getBlob(res.getColumnIndex(MEDIA_COLUMN_IMAGE)));
+            array_list.add(res.getString(res.getColumnIndex(MEDIA_COLUMN_URL)));
             res.moveToNext();
         }
         return array_list;

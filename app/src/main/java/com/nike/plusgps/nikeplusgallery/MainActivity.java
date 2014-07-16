@@ -9,18 +9,20 @@ package com.nike.plusgps.nikeplusgallery;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.LruCache;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -30,7 +32,9 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 /**
@@ -44,6 +48,7 @@ public class MainActivity extends Activity {
     private static final float INITIAL_ITEMS_COUNT = 2.5F; // Number of items visible when the carousel is shown
     private LinearLayout carouselElement; // Carousel container layout
     private DBHelper dbHelper; // SQLite database instance
+    private LruCache<String, Bitmap> mMemoryCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,13 +56,36 @@ public class MainActivity extends Activity {
         dbHelper = new DBHelper(this); // Creates the database
         dbHelper.deleteAllResponse(); // Clears the JSON response cache
         dbHelper.deleteAllMedia(); // Clears the JSON images cache
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            setContentView(R.layout.activity_main_port);
+            GridView view = (GridView) findViewById(R.id.gridView);
+            flickrFeedList = new ArrayList<FlickrFeed>();
+            new JSONParser().execute("http://api.flickr.com/services/feeds/photos_public.gne?tags=nike&format=json");
+            adapter = new FlickrFeedAdapter(getApplicationContext(), R.layout.single_elem_port, flickrFeedList, dbHelper);
+            view.setAdapter(adapter);
+        } else {
+            setContentView(R.layout.activity_main_land);
+            carouselElement = (LinearLayout) findViewById(R.id.carousel);
+            // Compute width of a carousel item based on screen width and initial item count
+            final DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            final int imageWidth = (int) (displayMetrics.widthPixels / INITIAL_ITEMS_COUNT);
 
-        setContentView(R.layout.activity_main_port);
-        GridView view = (GridView)findViewById(R.id.gridView);
-        flickrFeedList = new ArrayList<FlickrFeed>();
-        new JSONParser().execute("http://api.flickr.com/services/feeds/photos_public.gne?tags=nike&format=json");
-        adapter = new FlickrFeedAdapter(getApplicationContext(), R.layout.single_elem_port, flickrFeedList, dbHelper);
-        view.setAdapter(adapter);
+            // Fetches the data from image cache in SQLite
+            ArrayList imageArray = new ArrayList();
+            imageArray = dbHelper.getAllMedia();
+            ImageView imageItem;
+            String imgURL;
+            for (int i = 0 ; i < imageArray.size() ; ++i) {
+                imageItem = new ImageView(this);
+                imgURL = (String) imageArray.get(i);
+                new DownloadImageTask(imageItem).execute(imgURL);
+                //imageItem.setImageBitmap(bm);
+                imageItem.setLayoutParams(new LinearLayout.LayoutParams(imageWidth, imageWidth));
+                carouselElement.addView(imageItem);
+            }
+
+        }
     }
 
     /**
@@ -69,13 +97,13 @@ public class MainActivity extends Activity {
         // In Portrait mode the grid view is displayed
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
 
-            Cursor res = dbHelper.getResponse(1); // Fetches the only row in the table
-            res.moveToFirst();
-            String url = res.getString(res.getColumnIndex(DBHelper.RESPONSE_COLUMN_TXT));
+            //Cursor res = dbHelper.getResponse(1); // Fetches the only row in the table
+            //res.moveToFirst();
+            //String url = res.getString(res.getColumnIndex(DBHelper.RESPONSE_COLUMN_TXT));
             setContentView(R.layout.activity_main_port);
             GridView view = (GridView)findViewById(R.id.gridView);
-            flickrFeedList = new ArrayList<FlickrFeed>();
-            new SQLiteParser().execute(url); // Fetches the JSON response from SQLite cache
+            //flickrFeedList = new ArrayList<FlickrFeed>();
+            //new SQLiteParser().execute(url); // Fetches the JSON response from SQLite cache
             adapter = new FlickrFeedAdapter(getApplicationContext(), R.layout.single_elem_port, flickrFeedList, dbHelper);
             view.setAdapter(adapter);
 
@@ -92,17 +120,67 @@ public class MainActivity extends Activity {
             ArrayList imageArray = new ArrayList();
             imageArray = dbHelper.getAllMedia();
             ImageView imageItem;
+            String imgURL;
             for (int i = 0 ; i < imageArray.size() ; ++i) {
                 imageItem = new ImageView(this);
-                byte[] imgBlob = (byte[]) imageArray.get(i);
-                Bitmap bm = BitmapFactory.decodeByteArray(imgBlob, 0 ,imgBlob.length);
-                imageItem.setImageBitmap(bm);
+                imgURL = (String) imageArray.get(i);
+                //Bitmap bm;
+                new DownloadImageTask(imageItem).execute(imgURL);
+                //imageItem.setImageBitmap(bm);
                 imageItem.setLayoutParams(new LinearLayout.LayoutParams(imageWidth, imageWidth));
                 carouselElement.addView(imageItem);
             }
         }
     }
 
+    /**
+     * Async task to download the images.
+     */
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        @Override
+        protected Bitmap doInBackground(String... strings) {
+            String imgURL = strings[0];
+            Bitmap bm = null;
+            // bm = getBitmapFromMemCache(imgURL); // Gets bitmap from memory cache
+            try {
+                //if (bm == null) { // Generates bitmap from the server
+                InputStream in = new java.net.URL(imgURL).openStream();
+                bm = BitmapFactory.decodeStream(in);
+                // }
+                //addBitmapToMemoryCache(imgURL, bm); // Adds bitmap to memory cache.
+
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return bm;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
+
+    }
+
+/*
+    public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+        if (getBitmapFromMemCache(key) == null) {
+            mMemoryCache.put(key, bitmap);
+        }
+    }
+
+    public Bitmap getBitmapFromMemCache(String key) {
+        return (Bitmap) mMemoryCache.get(key);
+    }
+
+*/
     /**
      * Async task to read the JSON response from server.
      */
@@ -138,13 +216,18 @@ public class MainActivity extends Activity {
 
                     JSONObject jobj = new JSONObject(data);
                     JSONArray jarray = jobj.getJSONArray("items");
-
+                    String img_url;
+                    String img_title;
                     for (int i = 0; i < jarray.length(); i++) {
                         JSONObject object = jarray.getJSONObject(i);
                         FlickrFeed feed = new FlickrFeed();
-                        feed.setMedia((new JSONObject(object.getString("media"))).getString("m"));
-                        feed.setTitle(object.getString("title"));
+                        img_url = (new JSONObject(object.getString("media"))).getString("m");
+                        img_title = object.getString("title");
+                        feed.setMedia(img_url);
+                        feed.setTitle(img_title);
                         flickrFeedList.add(feed);
+                        dbHelper.insertMedia(img_url,img_title); // Insert image path and title into SQLite Cache
+                        //Toast.makeText(getApplicationContext(), String.valueOf(dbHelper.countMedia()), Toast.LENGTH_SHORT).show();
                     }
                     return true;
                 }
