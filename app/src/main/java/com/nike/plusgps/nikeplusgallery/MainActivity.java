@@ -99,14 +99,11 @@ public class MainActivity extends Activity {
             getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             final int imageWidth = (int) (displayMetrics.widthPixels / INITIAL_ITEMS_COUNT);
 
-            // Fetches the data from image cache in SQLite
-            ArrayList imageArray = new ArrayList();
-            imageArray = dbHelper.getAllMedia();
             ImageView imageItem;
             String imgURL;
-            for (int i = 0 ; i < imageArray.size() ; ++i) {
+            for (int i = 0 ; i < flickrFeedList.size() ; ++i) {
                 imageItem = new ImageView(this);
-                imgURL = (String) imageArray.get(i);
+                imgURL = flickrFeedList.get(i).getMedia();
                 new DownloadImageTask(imageItem).execute(imgURL);
                 imageItem.setLayoutParams(new LinearLayout.LayoutParams(imageWidth, imageWidth));
                 carouselElement.addView(imageItem);
@@ -139,16 +136,12 @@ public class MainActivity extends Activity {
             final int imageWidth = (int) (displayMetrics.widthPixels / INITIAL_ITEMS_COUNT);
 
             // Fetches image url from SQLite cache
-            ArrayList imageArray = new ArrayList();
-            imageArray = dbHelper.getAllMedia();
             ImageView imageItem;
             String imgURL;
-            for (int i = 0 ; i < imageArray.size() ; ++i) {
+            for (int i = 0 ; i < flickrFeedList.size() ; ++i) {
                 imageItem = new ImageView(this);
-                imgURL = (String) imageArray.get(i);
-                //Bitmap bm;
+                imgURL = flickrFeedList.get(i).getMedia();
                 new DownloadImageTask(imageItem).execute(imgURL);
-                //imageItem.setImageBitmap(bm);
                 imageItem.setLayoutParams(new LinearLayout.LayoutParams(imageWidth, imageWidth));
                 carouselElement.addView(imageItem);
             }
