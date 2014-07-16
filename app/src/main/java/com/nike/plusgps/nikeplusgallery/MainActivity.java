@@ -51,6 +51,10 @@ public class MainActivity extends Activity {
     private LinearLayout carouselElement; // Carousel container layout
     private DBHelper dbHelper; // SQLite database instance
     private LruCache<String, Bitmap> mMemoryCache;
+    private final Object mDiskCacheLock = new Object();
+    private boolean mDiskCacheStarting = true;
+    private static final int DISK_CACHE_SIZE = 1024 * 1024 * 10; // 10MB
+    private static final String DISK_CACHE_SUBDIR = "thumbnails";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +77,8 @@ public class MainActivity extends Activity {
                 return bitmap.getByteCount();
             }
         };
+
+
 
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
 

@@ -84,7 +84,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public boolean deleteAllMedia() {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(RESPONSE_TABLE_NAME, null, null);
+        db.delete(MEDIA_TABLE_NAME, null, null);
         return true;
     }
 
